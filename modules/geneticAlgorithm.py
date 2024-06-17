@@ -1,4 +1,5 @@
 import random
+from multiprocessing import Pool
 
 class GeneticAlgorithm:
     def __init__(self, warehouses, customers, population_size=50, generations=100, crossover_rate=0.8, mutation_rate=0.1, tournament_size=5, elitism=True, seed=None, diversity_threshold=0.1, diversity_mutation_increase=0.5, random_immigrants_rate=0.1):
@@ -16,27 +17,32 @@ class GeneticAlgorithm:
         if seed is not None:
             random.seed(seed)
         self.population = self.initialize_population()
+        self.fixed_costs = [float(warehouse.fixed_cost) for warehouse in self.warehouses]
+        self.customer_costs = [customer.costs for customer in self.customers]
+        self.cost_matrix = self.compute_cost_matrix()
 
     def initialize_population(self):
         return [[random.choice([True,False]) for _ in range(len(self.warehouses))] for _ in range(self.population_size)]
+
+    def compute_cost_matrix(self):
+        cost_matrix = []
+        for solution in self.population:
+            cost_matrix.append(self.calculate_cost(solution))
+        return cost_matrix
 
     def calculate_cost(self, solution):
         total_cost = 0
         for i, facility_open in enumerate(solution):
             if facility_open:
-                total_cost += float(self.warehouses[i].fixed_cost)
-        for customer in self.customers:
-            min_cost = float('inf')
-            for i, facility_open in enumerate(solution):
-                if facility_open:
-                    min_cost = min(min_cost, float(customer.costs[i]))
-            if min_cost == float('inf'):
-                return float('inf')
-            total_cost += min_cost
+                total_cost += self.fixed_costs[i]
+        for customer_cost in self.customer_costs:
+            min_cost = min([cost for open_, cost in zip(solution, customer_cost) if open_])
+            total_cost += float(min_cost)
         return total_cost
 
     def evaluate_population(self):
-        return [self.calculate_cost(individual) for individual in self.population]
+        with Pool() as pool:
+            return pool.map(self.calculate_cost, self.population)
 
     def tournament_selection(self, fitness):
         selected = []
@@ -72,20 +78,33 @@ class GeneticAlgorithm:
     def local_search(self, individual):
         best_solution = individual[:]
         best_cost = self.calculate_cost(individual)
-        improvement = True
 
-        while improvement:
-            improvement = False
-            for i in range(len(best_solution)):
-                neighbor = best_solution[:]
-                neighbor[i] = not neighbor[i]
+        while True:
+            neighbors = self.generate_neighbors(best_solution)
+            found_better = False
+
+            for neighbor in neighbors:
                 neighbor_cost = self.calculate_cost(neighbor)
                 if neighbor_cost < best_cost:
                     best_solution = neighbor
                     best_cost = neighbor_cost
-                    improvement = True
+                    found_better = True
+
+            if not found_better:
+                break
+
         return best_solution
 
+    def generate_neighbors(self, solution):
+        neighbors = []
+
+        for i in range(len(solution)):
+            neighbor = solution[:]
+            neighbor[i] = not neighbor[i]
+            neighbors.append(neighbor)
+
+        return neighbors
+    
     def run(self):
         best_solution = None
         best_cost = float('inf')
@@ -111,7 +130,6 @@ class GeneticAlgorithm:
                 if len(next_population) < self.population_size:
                     next_population.append(self.local_search(self.mutate(offspring2)))
 
-
             self.population = next_population
 
             diversity = self.calculate_diversity()
@@ -119,7 +137,7 @@ class GeneticAlgorithm:
                 self.mutation_rate += self.diversity_mutation_increase
             else:
                 self.mutation_rate = max(self.mutation_rate - self.diversity_mutation_increase, 0.01)
-        
+
             self.introduce_random_immigrants()
 
         return best_solution, best_cost
