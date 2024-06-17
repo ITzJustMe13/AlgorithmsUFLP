@@ -73,7 +73,7 @@ class GeneticAlgorithmNoSearch:
         best_solution = None
         best_cost = float('inf')
 
-        for generation in range(self.generations):
+        for _ in range(self.generations):
             fitness = self.evaluate_population()
             current_best_cost = min(fitness)
             current_best_solution = self.population[fitness.index(current_best_cost)]

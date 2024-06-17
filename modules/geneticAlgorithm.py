@@ -1,5 +1,6 @@
 import random
-from multiprocessing import Pool
+from concurrent.futures import ProcessPoolExecutor
+from collections import deque
 
 class GeneticAlgorithm:
     def __init__(self, warehouses, customers, population_size=50, generations=100, crossover_rate=0.8, mutation_rate=0.1, tournament_size=5, elitism=True, seed=None, diversity_threshold=0.1, diversity_mutation_increase=0.5, random_immigrants_rate=0.1):
@@ -17,54 +18,102 @@ class GeneticAlgorithm:
         if seed is not None:
             random.seed(seed)
         self.population = self.initialize_population()
-        self.fixed_costs = [float(warehouse.fixed_cost) for warehouse in self.warehouses]
-        self.customer_costs = [customer.costs for customer in self.customers]
-        self.cost_matrix = self.compute_cost_matrix()
 
     def initialize_population(self):
-        return [[random.choice([True,False]) for _ in range(len(self.warehouses))] for _ in range(self.population_size)]
-
-    def compute_cost_matrix(self):
-        cost_matrix = []
-        for solution in self.population:
-            cost_matrix.append(self.calculate_cost(solution))
-        return cost_matrix
+        population = []
+        for _ in range(self.population_size):
+            while True:
+                individual = [random.choice([True,False]) for _ in range(len(self.warehouses))]
+                if any(individual):  # Ensure at least one facility is open
+                    population.append(individual)
+                    break
+        return population
 
     def calculate_cost(self, solution):
         total_cost = 0
         for i, facility_open in enumerate(solution):
             if facility_open:
-                total_cost += self.fixed_costs[i]
-        for customer_cost in self.customer_costs:
-            min_cost = min([cost for open_, cost in zip(solution, customer_cost) if open_])
-            total_cost += float(min_cost)
+                total_cost += float(self.warehouses[i].fixed_cost)
+        for customer in self.customers:
+            min_cost = float('inf')
+            for i, facility_open in enumerate(solution):
+                if facility_open:
+                    min_cost = min(min_cost, float(customer.costs[i]))
+            if min_cost == float('inf'):
+                return float('inf')
+            total_cost += min_cost
         return total_cost
 
     def evaluate_population(self):
-        with Pool() as pool:
-            return pool.map(self.calculate_cost, self.population)
+        with ProcessPoolExecutor() as executor:
+            fitness = list(executor.map(self.calculate_cost, self.population))
+        return fitness
 
     def tournament_selection(self, fitness):
         selected = []
         for _ in range(self.population_size):
             tournament = random.sample(range(self.population_size), self.tournament_size)
-            tournament_fitness = [(self.population[i], fitness[i]) for i in tournament]
-            tournament_fitness.sort(key=lambda x: x[1])
-            selected.append(tournament_fitness[0][0])
+            tournament_fitness = [fitness[i] for i in tournament]
+            best = tournament[tournament_fitness.index(min(tournament_fitness))]
+            selected.append(self.population[best])
         return selected
 
     def crossover(self, parent1, parent2):
         if random.random() < self.crossover_rate:
-            point = random.randint(1, len(self.warehouses) - 1)
+            point = random.randint(1, len(parent1) - 2)
             return parent1[:point] + parent2[point:], parent2[:point] + parent1[point:]
-        return parent1, parent2
+        else:
+            return parent1, parent2
 
-    def mutate(self, individual):
-        new_individual = individual[:]
-        for i in range(len(new_individual)):
-            if random.random() < self.mutation_rate:
-                new_individual[i] = not new_individual[i]
-        return new_individual
+    def mutate(self, solution):
+        mutated = [not gene if random.random() < self.mutation_rate else gene for gene in solution]
+        if not any(mutated):  # Ensure at least one facility is open after mutation
+            mutated[random.randint(0, len(mutated) - 1)] = True
+        return mutated
+
+    def tabu_search(self, solution, max_iterations=100, tabu_tenure=10):
+        best_solution = solution[:]
+        best_cost = self.calculate_cost(solution)
+        current_solution = solution[:]
+        current_cost = best_cost
+
+        tabu_list = deque(maxlen=tabu_tenure)
+
+        for _ in range(max_iterations):
+            neighbors = self.generate_neighbors(current_solution)
+            best_neighbor = None
+            best_neighbor_cost = float('inf')
+
+            for neighbor in neighbors:
+                neighbor_tuple = tuple(neighbor)
+                if neighbor_tuple in tabu_list:
+                    continue
+                neighbor_cost = self.calculate_cost(neighbor)
+                if neighbor_cost < best_neighbor_cost:
+                    best_neighbor = neighbor
+                    best_neighbor_cost = neighbor_cost
+
+            if best_neighbor is None:
+                break
+
+            current_solution = best_neighbor
+            current_cost = best_neighbor_cost
+            tabu_list.append(tuple(current_solution))
+
+            if current_cost < best_cost:
+                best_solution = current_solution
+                best_cost = current_cost
+
+        return best_solution
+
+    def generate_neighbors(self, solution):
+        neighbors = []
+        for i in range(len(solution)):
+            neighbor = solution[:]
+            neighbor[i] = not neighbor[i]
+            if any(neighbor):  # Ensure at least one facility remains open
+                neighbors.append(neighbor)
+        return neighbors
 
     def calculate_diversity(self):
         unique_individuals = {tuple(individual) for individual in self.population}
@@ -75,39 +124,10 @@ class GeneticAlgorithm:
         for _ in range(num_immigrants):
             self.population[random.randint(0, self.population_size - 1)] = [random.choice([True, False]) for _ in range(len(self.warehouses))]
 
-    def local_search(self, individual):
-        best_solution = individual[:]
-        best_cost = self.calculate_cost(individual)
-
-        while True:
-            neighbors = self.generate_neighbors(best_solution)
-            found_better = False
-
-            for neighbor in neighbors:
-                neighbor_cost = self.calculate_cost(neighbor)
-                if neighbor_cost < best_cost:
-                    best_solution = neighbor
-                    best_cost = neighbor_cost
-                    found_better = True
-
-            if not found_better:
-                break
-
-        return best_solution
-
-    def generate_neighbors(self, solution):
-        neighbors = []
-
-        for i in range(len(solution)):
-            neighbor = solution[:]
-            neighbor[i] = not neighbor[i]
-            neighbors.append(neighbor)
-
-        return neighbors
-    
     def run(self):
         best_solution = None
         best_cost = float('inf')
+
         for _ in range(self.generations):
             fitness = self.evaluate_population()
             current_best_cost = min(fitness)
@@ -126,9 +146,9 @@ class GeneticAlgorithm:
             while len(next_population) < self.population_size:
                 parent1, parent2 = random.sample(parents, 2)
                 offspring1, offspring2 = self.crossover(parent1, parent2)
-                next_population.append(self.local_search(self.mutate(offspring1)))
+                next_population.append(self.tabu_search(self.mutate(offspring1)))
                 if len(next_population) < self.population_size:
-                    next_population.append(self.local_search(self.mutate(offspring2)))
+                    next_population.append(self.tabu_search(self.mutate(offspring2)))
 
             self.population = next_population
 

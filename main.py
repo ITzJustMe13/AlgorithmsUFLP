@@ -8,7 +8,7 @@ from modules.geneticAlgorithmWOLocalSearch import GeneticAlgorithmNoSearch
 import time
 
 if __name__ == '__main__':
-    with open('./data/M/Kcapmr1.txt', 'r') as file:
+    with open('./data/ORLIB/ORLIB-uncap/70/cap71.txt', 'r') as file:
         total_warehouses, total_customers = map(int, file.readline().split())
         warehouses = [Warehouse((file.readline().split()[1]).rstrip('.')) for _ in range(total_warehouses)]
         customers: list[Customer] = []
@@ -31,8 +31,8 @@ if __name__ == '__main__':
 
     start_time = time.time()
 
-    #best_solution, best_cost = GenAlg.run()         ##q incrivelmente lento
-    best_solution, best_cost = GenAlgNOSearch.run() ## incrivel rapido
+    best_solution, best_cost = GenAlg.run()         ##q incrivelmente lento
+    #best_solution, best_cost = GenAlgNOSearch.run() ## incrivel rapido
     #best_solution, best_cost = Greedy.greedy()              ##BOM
     #best_solution, best_cost = SearchSwitch.local_search()    ##MT BOM
     #best_solution, best_cost = SearchSwap.local_search()    ##N PRESTA
@@ -43,8 +43,3 @@ if __name__ == '__main__':
     print("Melhor Soluçao: ", best_solution)
     print("Custo da melhor solução: ", best_cost)
     print("Tempo: %s segundos" % (time.time() - start_time))
-
-
-
-
-
