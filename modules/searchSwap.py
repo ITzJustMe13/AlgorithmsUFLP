@@ -35,6 +35,7 @@ class LocalSearchSwap:
                
                 if any(neighbor_solution):
                     neighbors.append(neighbor_solution)
+                    
         return neighbors
 
     def local_search(self):

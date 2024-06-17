@@ -7,7 +7,7 @@ from modules.geneticAlgorithm import GeneticAlgorithm
 from modules.geneticAlgorithmWOLocalSearch import GeneticAlgorithmNoSearch
 import time
 
-with open('./data/ORLIB/ORLIB-uncap/70/cap71.txt', 'r') as file:
+with open('./data/M/Kcapmo1.txt', 'r') as file:
     total_warehouses, total_customers = map(int, file.readline().split())
     warehouses = [Warehouse((file.readline().split()[1]).rstrip('.')) for _ in range(total_warehouses)]
     customers: list[Customer] = []
@@ -32,8 +32,8 @@ start_time = time.time()
 
 #best_solution, best_cost = GenAlg.run()         ##q incrivelmente lento
 #best_solution, best_cost = GenAlgNOSearch.run() ## incrivel rapido
-best_solution, best_cost = Greedy.greedy()              ##BOM
-#best_solution, best_cost = SearchSwitch.local_search()    ##MT BOM
+#best_solution, best_cost = Greedy.greedy()              ##BOM
+best_solution, best_cost = SearchSwitch.local_search()    ##MT BOM
 #best_solution, best_cost = SearchSwap.local_search()    ##N PRESTA
 
 for i , warehouse in enumerate(warehouses):
