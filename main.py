@@ -8,6 +8,27 @@ from modules.geneticAlgorithmWOLocalSearch import GeneticAlgorithmNoSearch
 import time
 
 if __name__ == '__main__':
+    """
+    This script reads data from a file, performs various optimization algorithms on the data,
+    and prints the best solution and its cost.
+
+    The script uses the following modules:
+    - Warehouse: Represents a warehouse.
+    - Customer: Represents a customer.
+    - LocalSearchSwitch: Performs local search using switch operations.
+    - LocalSearchSwap: Performs local search using swap operations.
+    - Greedy: Implements a greedy algorithm.
+    - GeneticAlgorithm: Implements a genetic algorithm.
+    - GeneticAlgorithmNoSearch: Implements a genetic algorithm without local search.
+
+    The script reads data from the file './data/ORLIB/ORLIB-uncap/70/cap71.txt' in the following format:
+    - The first line contains the total number of warehouses and total number of customers.
+    - The next lines contain information about each warehouse and customer, including costs.
+
+    The script then runs different optimization algorithms and prints the best solution and its cost.
+
+    Note: Uncomment the desired algorithm to run it.
+    """
     with open('./data/M/Kcapmr5.txt', 'r') as file:
         total_warehouses, total_customers = map(int, file.readline().split())
         warehouses = [Warehouse((file.readline().split()[1]).rstrip('.')) for _ in range(total_warehouses)]

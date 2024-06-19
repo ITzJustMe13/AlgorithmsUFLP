@@ -1,14 +1,34 @@
 class greedy:
 
     def __init__(self, warehouses, customers):
+        """
+        Initializes a Greedy object with the given warehouses and customers.
+
+        Args:
+            warehouses (list): A list of warehouses.
+            customers (list): A list of customers.
+
+        Attributes:
+            warehouses (list): A list of warehouses.
+            customers (list): A list of customers.
+            current_solution (list): The current solution, represented as a list of booleans.
+            best_solution (list): The best solution found so far, represented as a list of booleans.
+            best_cost (float): The cost of the best solution found so far.
+        """
         self.warehouses = warehouses
         self.customers = customers
         self.current_solution = [True for _ in range(len(warehouses))]
         self.best_solution = self.current_solution[:]
         self.best_cost = self.calculate_cost(self.current_solution)
 
-    #Algoritmo greedy
+   
     def greedy(self):
+        """
+        Applies the greedy algorithm to find the best solution for the UFLP problem.
+
+        Returns:
+            tuple: A tuple containing the best solution and its cost.
+        """
         for i in range(len(self.warehouses)):
             self.current_solution[i] = False
 
@@ -21,8 +41,18 @@ class greedy:
     
         return self.best_solution, self.best_cost
 
-    #calcula os custos
+    
     def calculate_cost(self, solution):
+        """
+        Calculates the total cost of a given solution for the Uncapacitated Facility Location Problem (UFLP).
+
+        Parameters:
+            solution (list): A list representing the solution, where each element indicates whether a facility is open or closed.
+
+        Returns:
+            float: The total cost of the solution.
+
+        """
         total_cost = 0
         for i, facility_open in enumerate(solution):
             if facility_open:

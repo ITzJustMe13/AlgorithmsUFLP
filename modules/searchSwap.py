@@ -4,6 +4,20 @@ import multiprocessing
 class LocalSearchSwap:
 
     def __init__(self, warehouses, customers):
+        """
+        Initializes a SearchSwap object with the given warehouses and customers.
+
+        Parameters:
+        - warehouses (list): A list of warehouses.
+        - customers (list): A list of customers.
+
+        Attributes:
+        - self.warehouses (list): The list of warehouses.
+        - self.customers (list): The list of customers.
+        - self.current_solution (list): The current solution, represented as a list of boolean values.
+        - self.best_solution (list): The best solution found so far, represented as a list of boolean values.
+        - self.best_cost (float): The cost of the best solution found so far.
+        """
         self.warehouses = warehouses
         self.customers = customers
         self.current_solution = [random.choice([True, False]) for _ in range(len(warehouses))]
@@ -12,8 +26,18 @@ class LocalSearchSwap:
         self.best_solution = self.current_solution[:]
         self.best_cost = self.calculate_cost(self.current_solution)
     
-    #Calcula custos
+    
     def calculate_cost(self, solution):
+        """
+        Calculates the total cost of a given solution for the Uncapacitated Facility Location Problem (UFLP).
+
+        Parameters:
+        - solution (list): A binary list representing the solution, where each element indicates whether a facility is open or closed.
+
+        Returns:
+        - total_cost (float): The total cost of the solution.
+
+        """
         total_cost = 0
         for i, facility_open in enumerate(solution):
             if facility_open:
@@ -29,8 +53,17 @@ class LocalSearchSwap:
             total_cost += min_cost
         return total_cost
     
-    #Gera vizinhos
+
     def generate_neighbors(self, max_neighbors=10):
+        """
+        Generates a list of neighboring solutions by swapping open and closed indices.
+
+        Args:
+            max_neighbors (int): The maximum number of neighbors to generate. Defaults to 10.
+
+        Returns:
+            list: A list of neighboring solutions, where each solution is represented as a list of open and closed indices.
+        """
         neighbors = []
         open_indices = [i for i, open_state in enumerate(self.current_solution) if open_state]
         closed_indices = [i for i, open_state in enumerate(self.current_solution) if not open_state]
@@ -46,20 +79,56 @@ class LocalSearchSwap:
         
         return neighbors
 
-    #Avalia os vizinhos
+
     def evaluate_neighbor(self, neighbor):
+        """
+        Evaluates the cost of a given neighbor.
+
+        Parameters:
+        neighbor (object): The neighbor to be evaluated.
+
+        Returns:
+        float: The cost of the neighbor.
+        """
         return self.calculate_cost(neighbor)
-    
-    #Avalia uma solução
+
     def quick_evaluate(self, solution):
+        """
+        Calculates the evaluation score for a given solution.
+
+        Parameters:
+        solution (list): A list representing the solution.
+
+        Returns:
+        int: The evaluation score of the solution.
+        """
         return sum(solution)
     
-    #verifica se a solução é valida se tem pelo menos uma warehouse aberta
+    
     def is_valid_solution(self, solution):
+        """
+        Checks if a given solution is valid.
+
+        Args:
+            solution (list): The solution to be checked.
+
+        Returns:
+            bool: True if the solution is valid, False otherwise.
+        """
         return any(solution)
 
-    #algoritmo de local search
+
     def local_search(self, max_iterations_without_improvement=10):
+        """
+        Perform local search to find the best solution for the given problem.
+
+        Args:
+            max_iterations_without_improvement (int): The maximum number of iterations without improvement allowed.
+
+        Returns:
+            tuple: A tuple containing the best solution found and its cost.
+
+        """
         improvement = True
         iterations_without_improvement = 0
         

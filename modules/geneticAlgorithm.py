@@ -3,17 +3,25 @@ from concurrent.futures import ProcessPoolExecutor
 from collections import deque
 
 class GeneticAlgorithm:
-    '''Inicialização da classe, population_size é o numero de individuos por geração DEFAULT = 100, 
-    generations é o numero de iterações que o código vai ter DEFAULT=100 , 
-    crossover_rate é a frequencia que vai haver filhos DEFAULT=0.8/ 80%,
-    mutation_rate é a frequencia que vai haver mutação durante o crossover DEFAULT=0.1/ 10%,
-    tournament_size é o tamanho do torneio de seleção de pais DEFAULT= 5,
-    elitism é se existe elitismo no algoritmo DEFAULT= TRUE,
-    diversity_threshold é o maximo de diversidade dentro do algoritmo DEFAULT = 0.1 10%
-    diversity_mutation_increase é o aumento de diversidade nas mutações DEFAULT= 0.5 50%
-    random_immigrants_rate é o quão frequente imigrantes são inseridos DEFAULT= 0.1 10%
-    '''
+    
     def __init__(self, warehouses, customers, population_size=50, generations=100, crossover_rate=0.8, mutation_rate=0.1, tournament_size=5, elitism=True, seed=None, diversity_threshold=0.1, diversity_mutation_increase=0.5, random_immigrants_rate=0.1):
+        """
+        Initializes a GeneticAlgorithm object.
+
+        Parameters:
+        - warehouses (list): A list of warehouses.
+        - customers (list): A list of customers.
+        - population_size (int): The size of the population (default: 50).
+        - generations (int): The number of generations to run the algorithm (default: 100).
+        - crossover_rate (float): The probability of crossover occurring during reproduction (default: 0.8).
+        - mutation_rate (float): The probability of mutation occurring during reproduction (default: 0.1).
+        - tournament_size (int): The size of the tournament selection (default: 5).
+        - elitism (bool): Whether to use elitism in the selection process (default: True).
+        - seed (int): The seed value for the random number generator (default: None).
+        - diversity_threshold (float): The threshold for measuring population diversity (default: 0.1).
+        - diversity_mutation_increase (float): The increase in mutation rate when population diversity is low (default: 0.5).
+        - random_immigrants_rate (float): The rate of random immigrants introduced in each generation (default: 0.1).
+        """
         self.warehouses = warehouses
         self.customers = customers
         self.population_size = population_size
@@ -29,8 +37,14 @@ class GeneticAlgorithm:
             random.seed(seed)
         self.population = self.initialize_population()
 
-    #Inicializa a população
+
     def initialize_population(self):
+        """
+        Initializes the population for the genetic algorithm.
+
+        Returns:
+            population (list): A list of individuals representing the initial population.
+        """
         population = []
         for _ in range(self.population_size):
             while True:
@@ -40,8 +54,18 @@ class GeneticAlgorithm:
                     break
         return population
 
-    #Calcula custos
+    
     def calculate_cost(self, solution):
+        """
+        Calculates the total cost of a given solution.
+
+        Parameters:
+        - solution (list): A binary list representing the solution, where each element indicates whether a facility is open or closed.
+
+        Returns:
+        - total_cost (float): The total cost of the solution.
+
+        """
         total_cost = 0
         for i, facility_open in enumerate(solution):
             if facility_open:
@@ -56,14 +80,29 @@ class GeneticAlgorithm:
             total_cost += min_cost
         return total_cost
 
-    #Avalia a população
+    
     def evaluate_population(self):
+        """
+        Evaluates the fitness of each individual in the population using parallel processing.
+
+        Returns:
+            fitness (list): A list of fitness values for each individual in the population.
+        """
         with ProcessPoolExecutor() as executor:
             fitness = list(executor.map(self.calculate_cost, self.population))
         return fitness
 
-    #Seleção de pais por torneio
     def tournament_selection(self, fitness):
+        """
+        Selects individuals from the population using tournament selection.
+
+        Args:
+            fitness (list): A list of fitness values for each individual in the population.
+
+        Returns:
+            list: A list of selected individuals.
+
+        """
         selected = []
         for _ in range(self.population_size):
             tournament = random.sample(range(self.population_size), self.tournament_size)
@@ -72,23 +111,54 @@ class GeneticAlgorithm:
             selected.append(self.population[best])
         return selected
 
-    #Criação de filhos (Crossover)
+    
     def crossover(self, parent1, parent2):
+        """
+        Performs crossover between two parent individuals.
+
+        Args:
+            parent1 (list): The first parent individual.
+            parent2 (list): The second parent individual.
+
+        Returns:
+            tuple: A tuple containing two offspring individuals resulting from the crossover.
+
+        """
         if random.random() < self.crossover_rate:
             point = random.randint(1, len(parent1) - 2)
             return parent1[:point] + parent2[point:], parent2[:point] + parent1[point:]
         else:
             return parent1, parent2
  
-    #Função de Mutação
+    
     def mutate(self, solution):
+        """
+        Mutates the given solution by flipping the values of some genes based on the mutation rate.
+
+        Args:
+            solution (list): The solution to be mutated, represented as a list of boolean values.
+
+        Returns:
+            list: The mutated solution.
+
+        """
         mutated = [not gene if random.random() < self.mutation_rate else gene for gene in solution]
         if not any(mutated):  
             mutated[random.randint(0, len(mutated) - 1)] = True
         return mutated
 
-    #Tabu_search algoritmo de pesquisa local
     def tabu_search(self, solution, max_iterations=100, tabu_tenure=10):
+        """
+        Perform tabu search algorithm to find the best solution for the given problem.
+
+        Args:
+            solution (list): The initial solution to start the search from.
+            max_iterations (int): The maximum number of iterations to perform.
+            tabu_tenure (int): The maximum number of solutions to keep in the tabu list.
+
+        Returns:
+            list: The best solution found by the tabu search algorithm.
+        """
         best_solution = solution[:]
         best_cost = self.calculate_cost(solution)
         current_solution = solution[:]
@@ -123,8 +193,18 @@ class GeneticAlgorithm:
 
         return best_solution
 
-    #gera vizinhos para a pesquisa local
+   
     def generate_neighbors(self, solution):
+        """
+        Generates neighboring solutions by flipping the state of each facility in the given solution.
+
+        Args:
+            solution (list): The current solution represented as a list of binary values.
+
+        Returns:
+            list: A list of neighboring solutions, where each solution is obtained by flipping the state of one facility in the given solution.
+
+        """
         neighbors = []
         for i in range(len(solution)):
             neighbor = solution[:]
@@ -133,19 +213,44 @@ class GeneticAlgorithm:
                 neighbors.append(neighbor)
         return neighbors
 
-    #calcula diversidade
+    
     def calculate_diversity(self):
+        """
+        Calculates the diversity of the population.
+
+        The diversity is calculated as the ratio of unique individuals to the total population size.
+
+        Returns:
+            float: The diversity of the population.
+        """
         unique_individuals = {tuple(individual) for individual in self.population}
         return len(unique_individuals) / self.population_size
 
-    #introduz imigrantes
+
     def introduce_random_immigrants(self):
+        """
+        Introduces random immigrants into the population.
+
+        This method randomly selects a number of individuals from the population and replaces their genes with random values.
+
+        Parameters:
+        - None
+
+        Returns:
+        - None
+        """
         num_immigrants = int(self.population_size * self.random_immigrants_rate)
         for _ in range(num_immigrants):
             self.population[random.randint(0, self.population_size - 1)] = [random.choice([True, False]) for _ in range(len(self.warehouses))]
 
-    #RUN
+ 
     def run(self):
+        """
+        Runs the genetic algorithm to find the best solution.
+
+        Returns:
+            tuple: A tuple containing the best solution and its cost.
+        """
         best_solution = None
         best_cost = float('inf')
 
