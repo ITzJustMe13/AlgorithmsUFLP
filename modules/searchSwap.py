@@ -12,6 +12,7 @@ class LocalSearchSwap:
         self.best_solution = self.current_solution[:]
         self.best_cost = self.calculate_cost(self.current_solution)
     
+    #Calcula custos
     def calculate_cost(self, solution):
         total_cost = 0
         for i, facility_open in enumerate(solution):
@@ -28,6 +29,7 @@ class LocalSearchSwap:
             total_cost += min_cost
         return total_cost
     
+    #Gera vizinhos
     def generate_neighbors(self, max_neighbors=10):
         neighbors = []
         open_indices = [i for i, open_state in enumerate(self.current_solution) if open_state]
@@ -44,15 +46,19 @@ class LocalSearchSwap:
         
         return neighbors
 
+    #Avalia os vizinhos
     def evaluate_neighbor(self, neighbor):
         return self.calculate_cost(neighbor)
     
+    #Avalia uma solução
     def quick_evaluate(self, solution):
         return sum(solution)
     
+    #verifica se a solução é valida se tem pelo menos uma warehouse aberta
     def is_valid_solution(self, solution):
         return any(solution)
 
+    #algoritmo de local search
     def local_search(self, max_iterations_without_improvement=10):
         improvement = True
         iterations_without_improvement = 0

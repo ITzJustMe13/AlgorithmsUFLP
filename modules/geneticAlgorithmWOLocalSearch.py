@@ -1,7 +1,18 @@
 import random
 
 class GeneticAlgorithmNoSearch:
-    def __init__(self, warehouses, customers, population_size=50, generations=100, crossover_rate=0.8, mutation_rate=0.1, tournament_size=5, elitism=True, seed=None, diversity_threshold=0.1, diversity_mutation_increase=0.5, random_immigrants_rate=0.1):
+
+    '''Inicialização da classe, population_size é o numero de individuos por geração DEFAULT = 100, 
+    generations é o numero de iterações que o código vai ter DEFAULT=100 , 
+    crossover_rate é a frequencia que vai haver filhos DEFAULT=0.8/ 80%,
+    mutation_rate é a frequencia que vai haver mutação durante o crossover DEFAULT=0.1/ 10%,
+    tournament_size é o tamanho do torneio de seleção de pais DEFAULT= 5,
+    elitism é se existe elitismo no algoritmo DEFAULT= TRUE,
+    diversity_threshold é o maximo de diversidade dentro do algoritmo DEFAULT = 0.1 10%
+    diversity_mutation_increase é o aumento de diversidade nas mutações DEFAULT= 0.5 50%
+    random_immigrants_rate é o quão frequente imigrantes são inseridos DEFAULT= 0.1 10%
+    '''
+    def __init__(self, warehouses, customers, population_size=500, generations=100, crossover_rate=0.8, mutation_rate=0.1, tournament_size=5, elitism=True, seed=None, diversity_threshold=0.1, diversity_mutation_increase=0.5, random_immigrants_rate=0.1):
         self.warehouses = warehouses
         self.customers = customers
         self.population_size = population_size
@@ -17,9 +28,11 @@ class GeneticAlgorithmNoSearch:
             random.seed(seed)
         self.population = self.initialize_population()
 
+    #Inicializa a população
     def initialize_population(self):
         return [[random.choice([True,False]) for _ in range(len(self.warehouses))] for _ in range(self.population_size)]
 
+    #Calcula os custos
     def calculate_cost(self, solution):
         total_cost = 0
         for i, facility_open in enumerate(solution):
@@ -35,9 +48,11 @@ class GeneticAlgorithmNoSearch:
             total_cost += min_cost
         return total_cost
 
+    #Avalia a população
     def evaluate_population(self):
         return [self.calculate_cost(individual) for individual in self.population]
 
+    #Seleção de pais por torneio
     def tournament_selection(self, fitness):
         selected = []
         for _ in range(self.population_size):
@@ -47,12 +62,14 @@ class GeneticAlgorithmNoSearch:
             selected.append(tournament_fitness[0][0])
         return selected
 
+    #Criação de filhos (Crossover)
     def crossover(self, parent1, parent2):
         if random.random() < self.crossover_rate:
             point = random.randint(1, len(self.warehouses) - 1)
             return parent1[:point] + parent2[point:], parent2[:point] + parent1[point:]
         return parent1, parent2
 
+    #Função de Mutação
     def mutate(self, individual):
         new_individual = individual[:]
         for i in range(len(new_individual)):
@@ -60,15 +77,18 @@ class GeneticAlgorithmNoSearch:
                 new_individual[i] = not new_individual[i]
         return new_individual
 
+    #Calcular diversidade
     def calculate_diversity(self):
         unique_individuals = {tuple(individual) for individual in self.population}
         return len(unique_individuals) / self.population_size
 
+    #Introduz imigrantes
     def introduce_random_immigrants(self):
         num_immigrants = int(self.population_size * self.random_immigrants_rate)
         for _ in range(num_immigrants):
             self.population[random.randint(0, self.population_size - 1)] = [random.choice([True, False]) for _ in range(len(self.warehouses))]
 
+    #RUN
     def run(self):
         best_solution = None
         best_cost = float('inf')

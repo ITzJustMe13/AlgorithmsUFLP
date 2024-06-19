@@ -7,6 +7,7 @@ class greedy:
         self.best_solution = self.current_solution[:]
         self.best_cost = self.calculate_cost(self.current_solution)
 
+    #Algoritmo greedy
     def greedy(self):
         for i in range(len(self.warehouses)):
             self.current_solution[i] = False
@@ -20,6 +21,7 @@ class greedy:
     
         return self.best_solution, self.best_cost
 
+    #calcula os custos
     def calculate_cost(self, solution):
         total_cost = 0
         for i, facility_open in enumerate(solution):

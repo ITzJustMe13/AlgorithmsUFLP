@@ -7,6 +7,7 @@ class LocalSearchSwitch:
         self.best_solution = self.current_solution[:]
         self.best_cost = self.calculate_cost(self.current_solution)
     
+    #Função calcular custos
     def calculate_cost(self, solution):
         total_cost = 0
         for i, facility_open in enumerate(solution):
@@ -20,6 +21,7 @@ class LocalSearchSwitch:
             total_cost += min_cost
         return total_cost
     
+    #Gera vizinhos
     def generate_neighbors(self):
         neighbors = []
         for i in range(len(self.warehouses)):
@@ -28,6 +30,7 @@ class LocalSearchSwitch:
             neighbors.append(neighbor_solution)
         return neighbors
 
+    #Pesquisa Local
     def local_search(self):
         improvement = True
         while improvement:
